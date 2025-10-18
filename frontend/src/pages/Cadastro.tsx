@@ -5,12 +5,61 @@ import { Link as RouterLink } from "react-router-dom";
 import { Link as MuiLink } from "@mui/material";
 import { Stack } from "@mui/material";
 
+const nomeSchema = z
+  .string()
+  // Remove espaços antes e depois do nome
+  .trim()
+  // Deve ter pelo menos 3 caracteres
+  .min(3, "Nome muito curto")
+  // Garante que virá nome e sobrenome
+  .refine(
+    (v) => v.split(/\s+/).length >= 2,
+    { message: "Informe nome e sobrenome" }
+  )
+  // Garante que cada parte do nome tem pelo menos 2 letras
+  .refine(
+    (v) => v.split(/\s+/).every(p => p.length >= 2),
+    { message: "Cada parte deve ter pelo menos 2 letras" }
+  );
+
+type InputEvt = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+type BlurEvt  = React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>;
+
 function handleSubtmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     console.log("Form submitted")
 }
 
 const Cadastro: React.FC = () => {
+    const [nome, setNome] = React.useState<string>("")
+    const [email, setEmail] = React.useState<string>("")
+    const [cpf, setCPF] = React.useState<string>("")
+    const [telefone, setTelefone] = React.useState<string>("")
+    
+    {/* Função para lidar com mudanças no TextField de nome*/}
+    const handleNomeChange = (event: InputEvt) => {
+        const value = event.target.value;
+        setNome(value);
+    }
+
+    {/* Função para lidar com mudanças no TextField de email*/}
+    const handleEmailChange = (event: InputEvt) => {
+        const value = event.target.value;
+        setEmail(value);
+    }
+
+    {/* Função para lidar com mudanças no TextField de CPF*/}
+    const handleCPFChange = (event: InputEvt) => {
+        const value = event.target.value;
+        setCPF(value);
+    }
+
+    {/* Função para lidar com mudanças no TextField de telefone*/}
+    const handleTelefoneChange = (event: InputEvt) => {
+        const value = event.target.value;
+        setTelefone(value);
+    }
+    
     return(
         <Box
         display = "flex"
