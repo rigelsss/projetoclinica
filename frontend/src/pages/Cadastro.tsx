@@ -5,6 +5,25 @@ import { Link as RouterLink } from "react-router-dom";
 import { Link as MuiLink } from "@mui/material";
 import { Stack } from "@mui/material";
 
+
+type InputEvt = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+type BlurEvt  = React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>;
+const onlyDigits = (s: string) => s.replace(/[^\d]/g, "");
+
+// Funcao de validação de CPF
+function isValidCPF(digits: string): boolean {
+    // 1) tamanho
+    if (digits.length !== 11) 
+        return false;
+  
+    // 2) sequências repetidas
+    if (/^(\d)\1{10}$/.test(digits)) 
+        return false;
+
+    return true;
+}
+
+// Schema de nome
 const nomeSchema = z
   .string()
   // Remove espaços antes e depois do nome
@@ -22,8 +41,28 @@ const nomeSchema = z
     { message: "Cada parte deve ter pelo menos 2 letras" }
   );
 
-type InputEvt = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
-type BlurEvt  = React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>;
+
+// Schema de CPF
+const cpfSchema = z
+  .string()
+  .trim()
+  .transform(onlyDigits)
+  .refine((v) => v.length === 11, "CPF deve ter 11 dígitos")
+  .refine(isValidCPF, "CPF inválido");
+
+// Schema de email
+const emailSchema = z.email("Email inválido");
+
+// Schema de telefone
+const telefoneSchema = z
+  .string()
+  .trim()
+  .transform(onlyDigits)
+  .refine((v) => v.length === 11, "Telefone (DDD + número) deve ter 11 dígitos")
+  .refine((v) => v.slice(0, 2) !== "00", "DDD inválido")
+  .refine((v) => v[2] === "9", "Para celular, o número deve iniciar com 9");
+
+
 
 function handleSubtmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
