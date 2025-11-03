@@ -92,6 +92,9 @@ const Login: React.FC = () => {
 
     };
 
+    const inputsValidos: boolean = !emailError && !passwordError;
+
+
     return(
         <Box 
         display = "flex"
@@ -174,6 +177,7 @@ const Login: React.FC = () => {
                     color = "primary"
                     sx = {{mt: 2}}
                     size = "large"
+                    disabled = {!inputsValidos}
                     >
                         Entrar
                         </Button>
