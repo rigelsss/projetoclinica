@@ -1,190 +1,127 @@
-import { TextField, Box, Paper, Typography, Button, } from "@mui/material"
-import { Login as LoginIcon } from "@mui/icons-material"
-import  React from "react";
+import React, { useState } from "react";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Paper,
+  Alert,
+  CircularProgress,
+  Stack,
+  Link as MuiLink,
+} from "@mui/material";
+import { Login as LoginIcon } from "@mui/icons-material";
 import { z } from "zod";
-import { Link as RouterLink } from "react-router-dom";
-import { Link as MuiLink } from "@mui/material";
-import { Stack } from "@mui/material";
-
+import { login as loginApi } from "../services/authService";
 
 const emailSchema = z.email("Email inválido");
 const passwordSchema = z.string().min(4, "A senha deve ter pelo menos 4 caracteres");
 
-type InputEvt = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
-type BlurEvt  = React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>;
+function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [msgSucesso, setMsgSucesso] = useState("");
+  const [msgErro, setMsgErro] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
+  const validateEmail = (value: string) => {
+    if (!value.trim()) return { isValid: false, message: "Email é obrigatório" };
+    const r = emailSchema.safeParse(value);
+    return { isValid: r.success, message: r.success ? "" : "Email inválido" };
+  };
 
-const Login: React.FC = () => {
-    const [email, setEmail] = React.useState<string>("");
-    const [password, setPassword] = React.useState<string>("");
+  const validatePassword = (value: string) => {
+    if (!value.trim()) return { isValid: false, message: "Senha é obrigatória" };
+    const r = passwordSchema.safeParse(value);
+    return { isValid: r.success, message: r.success ? "" : "Senha com menos de 4 caracteres" };
+  };
 
-    const [emailError, setEmailError] = React.useState<string | null>(null);
-    const [passwordError, setPasswordError] = React.useState<string | null>(null);
+  const inputsValidos = validateEmail(email).isValid && validatePassword(password).isValid;
 
-    type Touched = { email: boolean, password: boolean};
-    const [touched, setTouched] = React.useState<Touched>({email: false, password: false});
-
-
-    // Função para lidar com a mudança do valor do campo de email
-    const handleEmailChange = (event: InputEvt) => {
-        const value = event.target.value;
-        setEmail(value)
-
-        if(touched.email){
-            setEmailError(validateEmail(value))
-        }
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const usuario = await loginApi(email, password);
+      setMsgSucesso(`Bem-vindo(a), ${usuario.nome}!`);
+      setMsgErro("");
+      setTimeout(() => navigate("/home"), 1000);
+    } catch (error: any) {
+      const mensagem = error?.response?.data?.message ?? "Erro ao realizar login. Verifique suas credenciais.";
+      setMsgErro(mensagem);
+      setMsgSucesso("");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Função para lidar com a mudança do valor do campo de senha
-    const handlePasswordChange = (event: InputEvt) => {
-        const value = event.target.value;
-        setPassword(value)
-
-        if(touched.password){
-            setPasswordError(validatePassword(value))
-        }
-    }
-
-    // Função para validar o email
-    const validateEmail = (email: string): string | null => {
-        if(!email.trim()){
-            return "Email é obrigatório"
-        }
-        const resultado = emailSchema.safeParse(email);
-
-        return resultado.success ? null : "Email inválido";
-    }
-
-    // Função para validar a senha
-    const validatePassword = (password: string): string | null => {
-        if(!password.trim()){
-            return "Senha é obrigatória"
-        }
-        const resultado = passwordSchema.safeParse(password);
-
-        return resultado.success ? null : "Senha inválida";
-    }
-
-    // Funcoes para efeito blur
-    const handleEmailBlur = (event: BlurEvt) => {
-        setTouched(prev => ({ ...prev, email: true }));
-        setEmailError(validateEmail(event.target.value));
-      };
-    
-      const handlePasswordBlur = (event: BlurEvt) => {
-        setTouched(prev => ({ ...prev, password: true }));
-        setPasswordError(validatePassword(event.target.value));
-      };
-    
-
-    // Função para lidar com o envio do formulário no botão submit
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        setTouched({ email: true, password: true });
-
-        const emailMsg = validateEmail(email);
-        const passwordMsg = validatePassword(password);
-
-        console.log("Email:", email, emailMsg);
-        console.log("Password:", password, passwordMsg);
-        console.log('Botao submitted');
-
-    };
-
-    const inputsValidos: boolean = !emailError && !passwordError;
-
-
-    return(
-        <Box 
-        display = "flex"
-        justifyContent = "center"
-        alignItems = "center"
-        minHeight = "80vh"
-        >
-
-            <Paper
-            elevation = {5}
-            sx = {{p: 3, width: 360}}
-            >
-
-                <Box
-                mb = {2}
-                textAlign = "center"
-                >
-                    <LoginIcon sx = {{
-                        color: "primary.main",
-                        mb: 1,
-                        fontSize: 36,
-                    }}/>
-                    <Typography
-                    variant = "h6"
-                    component = "h2"
-                    fontWeight = {600}
-                    mb = {1}
-                    >
-                        Bem-Vindo
-                    
-                        </Typography>
-
-                        <Stack spacing={0.5} mb={3}>
-                           <Typography variant="body1" color="text.secondary">
-                                Faça login para continuar ou
-                            </Typography>
-                            <MuiLink 
-                            component={RouterLink} 
-                            to="/cadastro" 
-                            underline="hover"
-                            >
-                            crie uma conta
-                        </MuiLink>
-                    </Stack>
-                </Box>
-
-                <Box
-                component = {"form"}
-                noValidate
-                onSubmit = {handleSubmit}
-                >
-                    <TextField 
-                    label = "Email"
-                    type = "email"
-                    fullWidth
-                    margin = "normal"
-                    onChange = {handleEmailChange}
-                    variant = {"standard"}
-                    onBlur = {handleEmailBlur}
-                    error = {touched.email && !!emailError}
-                    helperText = {touched.email ? (emailError ?? "") : ""}
-                    />
-                    
-                    <TextField 
-                    label = "Senha" 
-                    type="password" 
-                    fullWidth
-                    margin = "normal"
-                    onChange = {handlePasswordChange}
-                    variant = {"standard"}
-                    onBlur = {handlePasswordBlur}
-                    error = {touched.password && !!passwordError}
-                    helperText = {touched.password ? (passwordError ?? "") : ""}
-                    />
-
-                    <Button 
-                    type = "submit"
-                    fullWidth
-                    variant = "contained"
-                    color = "primary"
-                    sx = {{mt: 2}}
-                    size = "large"
-                    disabled = {!inputsValidos}
-                    >
-                        Entrar
-                        </Button>
-                </Box>
-            </Paper>
+  return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+      <Paper elevation={2} sx={{ p: 3, width: 360 }}>
+        <Box textAlign="center" mb={2}>
+          <LoginIcon sx={{ fontSize: 36, color: "primary.main", mb: 1 }} />
+          <Typography variant="h6" component="h2" fontWeight={600} mb={1}>
+            Bem-vindo
+          </Typography>
+          <Stack spacing={0.5} mb={2}>
+            <Typography variant="body2" color="text.secondary">
+              Faça login para continuar ou
+            </Typography>
+            <MuiLink component={RouterLink} to="/cadastro" underline="hover">
+              crie uma conta
+            </MuiLink>
+          </Stack>
         </Box>
-    );
+
+        {msgSucesso && <Alert>{msgSucesso}</Alert>}
+        {msgErro && <Alert severity="error">{msgErro}</Alert>}
+
+        <Box component="form" noValidate onSubmit={handleSubmit}>
+          <TextField
+            label="Email"
+            type="email"
+            fullWidth
+            margin="normal"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={!validateEmail(email).isValid}
+            helperText={validateEmail(email).message}
+            disabled={isLoading}
+          />
+          <TextField
+            label="Senha"
+            type="password"
+            fullWidth
+            margin="normal"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={!validatePassword(password).isValid}
+            helperText={validatePassword(password).message}
+            disabled={isLoading}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 2 }}
+            disabled={!inputsValidos || isLoading}
+          >
+            {isLoading ? (
+              <Box display="flex" alignItems="center" gap={1}>
+                <CircularProgress size={20} color="inherit" />
+                Carregando...
+              </Box>
+            ) : (
+              "Entrar"
+            )}
+          </Button>
+        </Box>
+      </Paper>
+    </Box>
+  );
 }
 
 export default Login;
